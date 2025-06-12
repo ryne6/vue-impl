@@ -120,15 +120,18 @@ export function createRenderer(options: RendererOptions) {
       const { render } = instance
   
       if (!instance.isMounted) {
-        // mount process
+        // mount process 转为 vnode
         const subTree = (instance.subTree = normalizeVNode(render()))
+        // patch  patch 后 有 el
         patch(null, subTree, container)
-        initVNode.el = subTree.el  // ?
+        // 保存 el
+        initVNode.el = subTree.el 
+        // 设置状态
         instance.isMounted = true
       } else {
-        // patch process
+        // patch process 
         let { next, vnode } = instance
-  
+        
         if (next) {
           next.el = vnode.el
           next.component = instance
