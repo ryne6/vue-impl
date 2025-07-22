@@ -1,38 +1,25 @@
 import { createApp, h, reactive } from 'vueImpl'
 
-const MyComponent = {
-  props: { someMessage: { type: String } },
-
-  setup(props: any, { emit }: any) {
-    return () =>
-      h('div', {}, [
-        h('p', {}, [`someMessage: ${props.someMessage}`]),
-        h('button', { onClick: () => emit('click:change-message') }, [
-          'change message',
-        ]),
-      ])
-  },
-}
-
 const app = createApp({
-  setup() {
-    const state = reactive({ message: 'hello' })
-    const changeMessage = () => {
-      state.message += '!'
-    }
+  template: `
+    <div class="container" style="text-align: center">
+      <h2>Hello!</h2>
+      <img
+        width="150px"
+        src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Vue.js_Logo_2.svg/1200px-Vue.js_Logo_2.svg.png"
+        alt="Vue.js Logo"
+      />
+      <p><b>vue</b> is the minimal Vue.js</p>
 
-    return () =>
-      h('div', { id: 'my-app' }, [
-        h(
-          MyComponent,
-          {
-            'some-message': state.message,
-            'onClick:change-message': changeMessage,
-          },
-          [],
-        ),
-      ])
-  },
+      <style>
+        .container {
+          height: 100vh;
+          padding: 16px;
+          background-color: #becdbe;
+          color: #2c3e50;
+        }
+      </style>
+    </div>
+  `,
 })
-
 app.mount('#app')

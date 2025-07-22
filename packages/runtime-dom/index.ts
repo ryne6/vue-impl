@@ -2,6 +2,7 @@ import { createAppAPI, CreateAppFunction } from '../runtime-core'
 import { createRenderer } from '../runtime-core/renderer'
 import { nodeOps } from './nodeOps'
 import { patchProp } from './patchProp'
+export { h } from '../runtime-core'
 
 const { render } = createRenderer({ ...nodeOps, patchProp })
 
