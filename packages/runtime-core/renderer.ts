@@ -110,7 +110,7 @@ export function createRenderer(options: RendererOptions) {
     initProps(instance, props);
     
     if (component.setup) {
-      instance.render = component.setup(instance.props) as InternalRenderFunction
+      instance.render = component.setup(instance.props, { emit: instance.emit }) as InternalRenderFunction
     }
     setupRenderEffect(instance, initVNode, container)
   }
