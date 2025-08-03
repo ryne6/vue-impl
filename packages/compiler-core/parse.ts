@@ -1,4 +1,4 @@
-import { AttributeNode, ElementNode, NodeTypes, Position, SourceLocation, TemplateChildNode, TextNode } from "./ast"
+import { AttributeNode, DirectiveNode, ElementNode, InterpolationNode, NodeTypes, Position, SourceLocation, TemplateChildNode, TextNode } from "./ast"
 
 export interface ParserContext {
   // 原始模板字符串
@@ -43,7 +43,9 @@ function parseChildren(
     const s = context.source
     let node: TemplateChildNode | undefined = undefined
 
-    if (s[0] === '<') {
+    if (startsWith(s, "{{")) { // 这里
+      node = parseInterpolation(context);
+    } else if (s[0] === '<') {
       // 如果 s 以 "<" 开头且下一个字符是字母，则将其解析为元素。
       if (/[a-z]/i.test(s[1])) {
         node = parseElement(context, ancestors) // TODO: 稍后实现这个。
@@ -59,6 +61,41 @@ function parseChildren(
   }
 
   return nodes
+}
+
+function parseInterpolation(
+  context: ParserContext,
+): InterpolationNode | undefined {
+  const [open, close] = ['{{', '}}']
+  const closeIndex = context.source.indexOf(close, open.length)
+  if (closeIndex === -1) return undefined
+
+  const start = getCursor(context)
+  advanceBy(context, open.length)
+
+  const innerStart = getCursor(context)
+  const innerEnd = getCursor(context)
+  const rawContentLength = closeIndex - open.length
+  const rawContent = context.source.slice(0, rawContentLength)
+  const preTrimContent = parseTextData(context, rawContentLength)
+
+  const content = preTrimContent.trim()
+
+  const startOffset = preTrimContent.indexOf(content)
+
+  if (startOffset > 0) {
+    advancePositionWithMutation(innerStart, rawContent, startOffset)
+  }
+  const endOffset =
+    rawContentLength - (preTrimContent.length - content.length - startOffset)
+  advancePositionWithMutation(innerEnd, rawContent, endOffset)
+  advanceBy(context, close.length)
+
+  return {
+    type: NodeTypes.INTERPOLATION,
+    content,
+    loc: getSelection(context, start),
+  }
 }
 
 // 确定解析子元素的 while 循环结束的函数
@@ -107,17 +144,18 @@ function startsWithEndTagOpen(source: string, tag: string): boolean {
 }
 
 function parseText(context: ParserContext): TextNode {
-  // 读取直到 "<"（无论它是开始还是结束标签），并根据读取了多少字符计算 Text 数据结束点的索引。
-  const endToken = '<'
+  const endTokens = ['<', '{{'] // 如果 <span v-pre>`{{`</span> 出现，parseText 结束
+
   let endIndex = context.source.length
-  const index = context.source.indexOf(endToken, 1)
-  if (index !== -1 && endIndex > index) {
-    endIndex = index
+
+  for (let i = 0; i < endTokens.length; i++) {
+    const index = context.source.indexOf(endTokens[i], 1)
+    if (index !== -1 && endIndex > index) {
+      endIndex = index
+    }
   }
 
-  const start = getCursor(context) // 用于 loc
-
-  // 根据 endIndex 的信息解析 Text 数据。
+  const start = getCursor(context)
   const content = parseTextData(context, endIndex)
 
   return {
@@ -259,7 +297,7 @@ function parseTag(context: ParserContext, type: TagType): ElementNode {
 function parseAttributes(
   context: ParserContext,
   type: TagType,
-): AttributeNode[] {
+): (AttributeNode | DirectiveNode)[] {
   const props = []
   const attributeNames = new Set<string>()
 
@@ -293,7 +331,7 @@ type AttributeValue =
 function parseAttribute(
   context: ParserContext,
   nameSet: Set<string>,
-): AttributeNode {
+): AttributeNode | DirectiveNode {
   // 名称。
   const start = getCursor(context)
   const match = /^[^\t\r\n\f />][^\t\r\n\f />=]*/.exec(context.source)!
@@ -314,6 +352,27 @@ function parseAttribute(
   }
 
   const loc = getSelection(context, start)
+
+  if (/^(v-[A-Za-z0-9-]|@)/.test(name)) {
+    const match =
+      /(?:^v-([a-z0-9-]+))?(?:(?::|^\.|^@|^#)(\[[^\]]+\]|[^\.]+))?(.+)?$/i.exec(
+        name
+      )!;
+
+    let dirName = match[1] || (startsWith(name, "@") ? "on" : "");
+
+    let arg = "";
+
+    if (match[2]) arg = match[2];
+
+    return {
+      type: NodeTypes.DIRECTIVE,
+      name: dirName,
+      exp: value?.content ?? "",
+      loc,
+      arg,
+    };
+  }
 
   return {
     type: NodeTypes.ATTRIBUTE,

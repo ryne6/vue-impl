@@ -117,11 +117,11 @@ export function createRenderer(options: RendererOptions) {
 
   const setupRenderEffect = (instance: ComponentInternalInstance, initVNode: VNode, container: RendererElement) => {
     const componentUpdateFn = () => {
-      const { render } = instance
+      const { render, setupState } = instance
   
       if (!instance.isMounted) {
         // mount process 转为 vnode
-        const subTree = (instance.subTree = normalizeVNode(render()))
+        const subTree = (instance.subTree = normalizeVNode(render(setupState)))
         // patch  patch 后 有 el
         patch(null, subTree, container)
         // 保存 el
@@ -143,7 +143,7 @@ export function createRenderer(options: RendererOptions) {
         }
   
         const prevTree = instance.subTree
-        const nextTree = normalizeVNode(render())
+        const nextTree = normalizeVNode(render(setupState))
         instance.subTree = nextTree
   
         patch(prevTree, nextTree, hostParentNode(prevTree.el!)!)

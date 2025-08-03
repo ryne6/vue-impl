@@ -5,7 +5,9 @@
 export const enum NodeTypes {
   ELEMENT,
   TEXT,
+  INTERPOLATION,
   ATTRIBUTE,
+  DIRECTIVE
 }
 
 // 所有 Node 都有 type 和 loc。
@@ -20,7 +22,7 @@ export interface Node {
 export interface ElementNode extends Node {
   type: NodeTypes.ELEMENT
   tag: string // 例如 "div"
-  props: Array<AttributeNode> // 例如 { name: "class", value: { content: "container" } }
+  props: Array<AttributeNode | DirectiveNode>
   children: TemplateChildNode[]
   isSelfClosing: boolean // 例如 <img /> -> true
 }
@@ -34,7 +36,22 @@ export interface AttributeNode extends Node {
   value: TextNode | undefined
 }
 
-export type TemplateChildNode = ElementNode | TextNode
+export interface DirectiveNode extends Node {
+  type: NodeTypes.DIRECTIVE
+  // 表示 `v-name:arg="exp"` 的格式。
+  // 例如，对于 `v-on:click="increment"`，它将是 { name: "on", arg: "click", exp="increment" }
+  name: string
+  arg: string
+  exp: string
+}
+
+
+export type TemplateChildNode = ElementNode | TextNode | InterpolationNode
+
+export interface InterpolationNode extends Node {
+  type: NodeTypes.INTERPOLATION
+  content: string // Mustache(Mustache 是一种用于模板语法的插值语法，形式为：{{ 表达式 }}) 内部编写的内容（在这种情况下，在 setup 中定义的单个变量名将放在这里）
+}
 
 export interface TextNode extends Node {
   type: NodeTypes.TEXT

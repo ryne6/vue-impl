@@ -21,10 +21,11 @@ export interface ComponentInternalInstance {
   propsOptions: Props
   props: Data
   emit: (event: string, ...args: any[]) => void
+  setupState: Data // 将 setup 的结果作为对象存储在这里
 }
 
 export type InternalRenderFunction = {
-  (): VNodeChild
+  (ctx: Data): VNodeChild
 }
 
 export function createComponentInstance(
@@ -43,7 +44,8 @@ export function createComponentInstance(
     isMounted: false,
     propsOptions: type.props || {},
     props: {},
-    emit: null!
+    emit: null!,
+    setupState: {}
   }
 
   instance.emit = emit.bind(null, instance)
@@ -63,9 +65,15 @@ export const setupComponent = (instance: ComponentInternalInstance) => {
 
   const component = instance.type as Component
   if (component.setup) {
-    instance.render = component.setup(instance.props, {
+    const setupResult = component.setup(instance.props, {
       emit: instance.emit,
     }) as InternalRenderFunction
+
+    if (typeof setupResult === 'function') {
+      instance.render = setupResult
+    } else if (typeof setupResult === 'object' && setupResult !== null) {
+      instance.setupState = setupResult
+    } else {}
   }
 
   if (compile && !component.render) {
