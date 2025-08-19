@@ -9,6 +9,7 @@ export type Component = ComponentOptions
 export type Data = Record<string, unknown>
 
 export interface ComponentInternalInstance {
+  uid: number
   type: Component 
   vnode: VNode
   subTree: VNode 
@@ -28,12 +29,15 @@ export type InternalRenderFunction = {
   (ctx: Data): VNodeChild
 }
 
+let uid = 0
+
 export function createComponentInstance(
   vnode: VNode,
 ): ComponentInternalInstance {
   const type = vnode.type as Component
 
   const instance: ComponentInternalInstance = {
+    uid: uid++,
     type,
     vnode,
     next: null,
@@ -81,5 +85,10 @@ export const setupComponent = (instance: ComponentInternalInstance) => {
     if (template) {
       instance.render = compile(template)
     }
+  }
+
+  const { render } = component
+  if (render) {
+    instance.render = render as InternalRenderFunction
   }
 }

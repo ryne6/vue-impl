@@ -1,6 +1,7 @@
 import { ReactiveEffect } from "../reactivity"
 import { Component, ComponentInternalInstance, createComponentInstance, InternalRenderFunction, setupComponent } from "./component"
 import { initProps, updateProps } from "./componentProps"
+import { queueJob, SchedulerJob } from "./scheduler"
 import { createVNode, normalizeVNode, Text, VNode, VNodeArrayChildren } from "./vnode"
 
 export interface RendererOptions<HostNode = RendererNode, HostElement = RendererElement> {
@@ -151,8 +152,11 @@ export function createRenderer(options: RendererOptions) {
       }
     }
   
-    const effect = (instance.effect = new ReactiveEffect(componentUpdateFn))
-    const update = (instance.update = () => effect.run()) // 注册到 instance.update
+    const effect = (instance.effect = new ReactiveEffect(componentUpdateFn, () =>
+      queueJob(update),
+    ))
+    const update: SchedulerJob = (instance.update = () => effect.run())
+    update.id = instance.uid
     update()
   }
 

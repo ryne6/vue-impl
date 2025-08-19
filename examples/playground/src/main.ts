@@ -1,51 +1,27 @@
-import { createApp, h, reactive } from 'vueImpl'
+import { createApp, h, reactive, nextTick } from 'vueImpl'
 
 const app = createApp({
   setup() {
-    const state = reactive({ message: 'Hello, chibivue!', input: '' })
+    const state = reactive({
+      count: 0,
+    })
+    const updateState = async () => {
+      state.count++
 
-    const changeMessage = () => {
-      state.message += '!'
+      await nextTick()
+      const p = document.getElementById('count-p')
+      if (p) {
+        console.log('😎 p.textContent', p.textContent)
+      }
     }
 
-    const handleInput = (e: InputEvent) => {
-      state.input = (e.target as HTMLInputElement)?.value ?? ''
+    return () => {
+      return h('div', { id: 'app' }, [
+        h('p', { id: 'count-p' }, [`${state.count}`]),
+        h('button', { onClick: updateState }, ['update']),
+      ])
     }
-
-    return { state, changeMessage, handleInput }
   },
-
-  template: `
-    <div class="container" style="text-align: center">
-      <h2>{{ state.message }}</h2>
-      <img
-        width="150px"
-        src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Vue.js_Logo_2.svg/1200px-Vue.js_Logo_2.svg.png"
-        alt="Vue.js Logo"
-      />
-      <p><b>chibivue</b> is the minimal Vue.js</p>
-
-      <button @click="changeMessage"> click me! </button>
-
-      <br />
-
-      <label>
-        Input Data
-        <input @input="handleInput" />
-      </label>
-
-      <p>input value: {{ state.input }}</p>
-
-      <style>
-        .container {
-          height: 100vh;
-          padding: 16px;
-          background-color: #becdbe;
-          color: #2c3e50;
-        }
-      </style>
-    </div>
-  `,
 })
 
 app.mount('#app')
