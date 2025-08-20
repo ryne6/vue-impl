@@ -74,3 +74,7 @@ export function trigger(target: object, key?: unknown) {
     }
   }
 }
+
+export function getDepFromReactive(object: any, key: string | number | symbol) {
+  return targetMap.get(object)?.get(key)
+}

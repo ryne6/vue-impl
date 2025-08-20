@@ -1,26 +1,17 @@
-import { createApp, h, reactive, nextTick } from 'vueImpl'
+import { createApp, h, reactive, toRef } from 'vueImpl'
 
 const app = createApp({
   setup() {
-    const state = reactive({
-      count: 0,
-    })
-    const updateState = async () => {
-      state.count++
+    const state = reactive({ count: 0 })
+    const stateCountRef = toRef(state, 'count')
 
-      await nextTick()
-      const p = document.getElementById('count-p')
-      if (p) {
-        console.log('😎 p.textContent', p.textContent)
-      }
-    }
-
-    return () => {
-      return h('div', { id: 'app' }, [
-        h('p', { id: 'count-p' }, [`${state.count}`]),
-        h('button', { onClick: updateState }, ['update']),
+    return () =>
+      h('div', {}, [
+        h('p', {}, [`state.count: ${state.count}`]),
+        h('p', {}, [`stateCountRef.value: ${stateCountRef.value}`]),
+        h('button', { onClick: () => state.count++ }, ['updateState']),
+        h('button', { onClick: () => stateCountRef.value++ }, ['updateRef']),
       ])
-    }
   },
 })
 
