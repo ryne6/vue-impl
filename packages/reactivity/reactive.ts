@@ -1,4 +1,4 @@
-import { isObject } from '../shared/isObject'
+import { isObject } from '../shared'
 import { mutableHandlers } from './baseHandler'
 import { Dep } from './dep'
 import { activeEffect, ReactiveEffect } from './effect'

@@ -1,34 +1,31 @@
-import { createApp, h, reactive, ref, computed } from 'vueImpl'
+import { createApp, h, reactive, ref, watchEffect, watch } from 'vueImpl'
 
 const app = createApp({
   setup() {
-    const count = reactive({ value: 0 })
-    const count2 = reactive({ value: 0 })
-    const double = computed(() => {
-      console.log('computed')
-      return count.value * 2
-    })
-    const doubleDouble = computed(() => {
-      console.log('computed (doubleDouble)')
-      return double.value * 2
-    })
+    const state = ref(0)
+    const state2 = ref(0)
+    const state3 = reactive({ count: 0 })
+    watch<number>(
+      [state, state2, () => state3.count],
+      (newValue, oldValue) => {
+        console.log('newValue', newValue)
+        console.log('oldValue', oldValue)
+      },
+      {
+        immediate: true,
+      },
+    )
 
-    const countRef = ref(0)
-    const doubleCountRef = computed(() => {
-      console.log('computed (doubleCountRef)')
-      return countRef.value * 2
+    watchEffect(() => {
+      console.log('state3.count', state3.count)
     })
 
     return () =>
       h('div', {}, [
-        h('p', {}, [`count: ${count.value}`]),
-        h('p', {}, [`count2: ${count2.value}`]),
-        h('p', {}, [`double: ${double.value}`]),
-        h('p', {}, [`doubleDouble: ${doubleDouble.value}`]),
-        h('p', {}, [`doubleCountRef: ${doubleCountRef.value}`]),
-        h('button', { onClick: () => count.value++ }, ['update count']),
-        h('button', { onClick: () => count2.value++ }, ['update count2']),
-        h('button', { onClick: () => countRef.value++ }, ['update countRef']),
+        h('p', {}, [`count: ${state.value}`]),
+        h('button', { onClick: () => state.value++ }, ['update state']),
+        h('button', { onClick: () => state2.value++ }, ['update state2']),
+        h('button', { onClick: () => state3.count++ }, ['update state3']),
       ])
   },
 })
